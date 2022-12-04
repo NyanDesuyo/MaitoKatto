@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/nodemon.json",
+  "verbose": true,
+  "ignore": [
+    "/build/*",
+    "/data/*",
+    "/node_modules/*",
+    "/sql/*",
+    "/src/template/*",
+    "/src/temp/*"
+  ],
+  "quiet": true,
+  "colours": true
+}
