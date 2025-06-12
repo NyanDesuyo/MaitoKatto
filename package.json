@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node ./build/main.js",
     "bot:dev": "nodemon ./src/main.ts",
     "bot:prod": "ts-node ./src/main.ts",
     "bot:deploycommands": "ts-node ./src/deploy-command.ts",
