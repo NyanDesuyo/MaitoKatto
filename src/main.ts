@@ -10,11 +10,11 @@ import {
 import { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } from "./constant";
 
 import { Command } from "./types/Command";
+import { Helper } from "./utils/helper";
 
 // Import the command
-import userCommand from "./commands/users"; // Assumes user.ts exports { data, execute }
-import clearCommand from "./commands/clear";
-import pingCommand from "./commands/ping";
+import userCommand from "./commands/users";
+import appCommand from "./commands/app";
 import todoCommand from "./commands/todo";
 
 async function main() {
@@ -23,12 +23,7 @@ async function main() {
   });
 
   // Store commands
-  const commands: Command[] = [
-    todoCommand,
-    pingCommand,
-    userCommand,
-    clearCommand,
-  ];
+  const commands: Command[] = [todoCommand, appCommand, userCommand];
 
   const commandMap = new Collection<string, Command>();
   for (const cmd of commands) {
@@ -48,10 +43,10 @@ async function main() {
   await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
     body: commands.map((cmd) => cmd.data.toJSON()),
   });
-  console.log("✅ Server Slash commands registered.");
+  Helper.consoleInspect("✅ Server Slash commands registered.");
 
   botClient.once("ready", () => {
-    console.log(`🤖 Logged in as ${botClient.user?.tag}`);
+    Helper.consoleInspect(`🤖 Logged in as ${botClient.user?.tag}`);
   });
 
   // Interaction handler
@@ -64,7 +59,7 @@ async function main() {
     try {
       await command.execute(interaction as ChatInputCommandInteraction);
     } catch (error) {
-      console.error(error);
+      Helper.consoleInspect(error);
       await interaction.reply({
         content: "There was an error executing this command.",
         ephemeral: true,
@@ -76,5 +71,5 @@ async function main() {
 }
 
 main().catch((e: any) => {
-  console.error("❌ Error starting bot:", e);
+  Helper.consoleInspect(`❌ Error starting bot: ${e}`);
 });
