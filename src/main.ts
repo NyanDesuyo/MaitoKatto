@@ -16,6 +16,7 @@ import { Helper } from "./utils/helper";
 import userCommand from "./commands/users";
 import appCommand from "./commands/app";
 import todoCommand from "./commands/todo";
+import expenseCommand from "./commands/expenses";
 
 async function main() {
   const botClient = new Client({
@@ -23,7 +24,7 @@ async function main() {
   });
 
   // Store commands
-  const commands: Command[] = [todoCommand, appCommand, userCommand];
+  const commands: Command[] = [todoCommand, appCommand, userCommand,expenseCommand];
 
   const commandMap = new Collection<string, Command>();
   for (const cmd of commands) {

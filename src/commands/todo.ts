@@ -8,10 +8,11 @@ import {
   ButtonStyle,
   ComponentType,
 } from "discord.js";
+import { eq, and } from "drizzle-orm";
+
 import { Command } from "../types/Command";
 import { db } from "../config/drizzle";
 import { todoTable } from "../database/schema";
-import { eq, and } from "drizzle-orm";
 
 interface Todo {
   id: number;
@@ -185,7 +186,6 @@ class TodoPagination {
           components: [this.createDisabledButtons()],
         });
       } catch (error) {
-        // Message might have been deleted
         console.log("Could not disable todo pagination buttons:", error);
       }
     });
