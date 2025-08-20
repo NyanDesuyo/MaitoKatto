@@ -10,9 +10,9 @@ import {
 } from "discord.js";
 import { eq, and } from "drizzle-orm";
 
-import { Command } from "../types/Command";
-import { db } from "../config/drizzle";
-import { todoTable } from "../database/schema";
+import { Command } from "../types/Command.js";
+import { db } from "../config/drizzle.js";
+import { todoTable } from "../database/schema.js";
 
 interface Todo {
   id: number;

@@ -5,8 +5,8 @@ import {
   TextChannel,
 } from "discord.js";
 
-import { Command } from "../types/Command";
-import { Helper } from "../utils/helper";
+import { Command } from "../types/Command.js";
+import { Helper } from "../utils/helper.js";
 
 const appCommand: Command = {
   data: new SlashCommandBuilder()

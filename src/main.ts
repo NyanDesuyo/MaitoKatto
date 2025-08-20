@@ -7,16 +7,16 @@ import {
   REST,
   Routes,
 } from "discord.js";
-import { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } from "./constant";
+import { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } from "./constant/index.js";
 
-import { Command } from "./types/Command";
-import { Helper } from "./utils/helper";
+import { Command } from "./types/Command.js";
+import { Helper } from "./utils/helper.js";
 
 // Import the command
-import userCommand from "./commands/users";
-import appCommand from "./commands/app";
-import todoCommand from "./commands/todo";
-import cashflowCommand from "./commands/cashflow";
+import userCommand from "./commands/users.js";
+import appCommand from "./commands/app.js";
+import todoCommand from "./commands/todo.js";
+import cashflowCommand from "./commands/cashflow.js";
 
 async function main() {
   const botClient = new Client({

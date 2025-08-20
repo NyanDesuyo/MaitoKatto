@@ -10,9 +10,9 @@ import {
 } from "discord.js";
 import { eq, and, isNull, gte, lte, desc } from "drizzle-orm";
 
-import { Command } from "../types/Command";
-import { db } from "../config/drizzle";
-import { cashflowTable } from "../database/schema";
+import { Command } from "../types/Command.js";
+import { db } from "../config/drizzle.js";
+import { cashflowTable } from "../database/schema.js";
 
 interface Cashflow {
   id: number;
@@ -52,9 +52,9 @@ class CashflowPagination {
   }
 
   private formatAmount(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'IDR',
     }).format(amount);
   }
 
@@ -371,9 +371,9 @@ const cashflowCommand: Command = {
           .returning();
         
         const typeIcon = type.toString() === "1" ? "📈" : "📉";
-        const formattedAmount = new Intl.NumberFormat('en-US', {
+        const formattedAmount = new Intl.NumberFormat('id-ID', {
           style: 'currency',
-          currency: 'USD',
+          currency: 'IDR',
         }).format(amount);
         
         return interaction.reply(
