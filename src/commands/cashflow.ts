@@ -253,10 +253,10 @@ const cashflowCommand: Command = {
         .addIntegerOption((opt) =>
           opt
             .setName("type")
-            .setDescription("Transaction type (0 = cashflow, 1 = income)")
+            .setDescription("Transaction type (0 = expense, 1 = income)")
             .setRequired(true)
             .addChoices(
-              { name: "Cashflow", value: 0 },
+              { name: "Expense", value: 0 },
               { name: "Income", value: 1 }
             )
         )
@@ -322,7 +322,7 @@ const cashflowCommand: Command = {
             .setDescription("New transaction type")
             .setRequired(false)
             .addChoices(
-              { name: "Cashflow", value: 0 },
+              { name: "Expense", value: 0 },
               { name: "Income", value: 1 }
             )
         )
@@ -377,7 +377,7 @@ const cashflowCommand: Command = {
         }).format(amount);
         
         return interaction.reply(
-          `✅ Added ${type.toString() === "1" ? 'income' : 'cashflow'} **#${inserted.id}**: ${name}\n` + 
+          `✅ Added ${type.toString() === "1" ? 'income' : 'expense'} **#${inserted.id}**: ${name}\n` + 
           `${typeIcon} ${formattedAmount} from ${account}`
         );
       } catch (error) {
