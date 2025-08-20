@@ -10,9 +10,9 @@ import {
 } from "discord.js";
 import { eq, and } from "drizzle-orm";
 
-import { Command } from "../types/Command";
-import { db } from "../config/drizzle";
-import { todoTable } from "../database/schema";
+import { Command } from "../types/Command.js";
+import { db } from "../config/drizzle.js";
+import { todoTable } from "../database/schema.js";
 
 interface Todo {
   id: number;
@@ -51,9 +51,7 @@ class TodoPagination {
       .setTitle("📝 Your Todos")
       .setColor("#0099ff")
       .setFooter({
-        text: `Page ${this.currentPage + 1} of ${this.totalPages} • Total: ${
-          this.todos.length
-        } todos`,
+        text: `Page ${this.currentPage + 1} of ${this.totalPages} • Total: ${this.todos.length} todos`,
       });
 
     if (pageTodos.length === 0) {
@@ -72,7 +70,6 @@ class TodoPagination {
   private createButtons(): ActionRowBuilder<ButtonBuilder> {
     const row = new ActionRowBuilder<ButtonBuilder>();
 
-    // Previous button
     row.addComponents(
       new ButtonBuilder()
         .setCustomId("todo_prev")
@@ -81,7 +78,6 @@ class TodoPagination {
         .setDisabled(this.currentPage === 0)
     );
 
-    // Page indicator
     row.addComponents(
       new ButtonBuilder()
         .setCustomId("todo_page_info")
@@ -90,7 +86,6 @@ class TodoPagination {
         .setDisabled(true)
     );
 
-    // Next button
     row.addComponents(
       new ButtonBuilder()
         .setCustomId("todo_next")
@@ -132,7 +127,6 @@ class TodoPagination {
       return;
     }
 
-    // If only one page, don't show pagination buttons
     if (this.totalPages === 1) {
       await this.interaction.reply({
         embeds: [this.createEmbed()],
@@ -152,7 +146,6 @@ class TodoPagination {
     });
 
     collector.on("collect", async (buttonInteraction) => {
-      // Only allow the original user to interact
       if (buttonInteraction.user.id !== this.interaction.user.id) {
         await buttonInteraction.reply({
           content: "❌ These buttons are not for you!",
@@ -250,7 +243,7 @@ const todoCommand: Command = {
     }
 
     if (sub === "list") {
-      const userTodos = await db
+      const userTodos: Todo[] = await db
         .select()
         .from(todoTable)
         .where(eq(todoTable.userId, userId));

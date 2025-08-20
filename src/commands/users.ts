@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
-import { Command } from "../types/Command"; // adjust the path if needed
+import { Command } from "../types/Command.js"; // adjust the path if needed
 
 const userCommand: Command = {
   data: new SlashCommandBuilder()

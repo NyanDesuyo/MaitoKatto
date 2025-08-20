@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 
-import { DATABASE_URL } from "../constant";
-import { todoTable } from "./schema";
+import { DATABASE_URL } from "../constant/index.js";
+import { todoTable } from "./schema.js";
 
 const db = drizzle(DATABASE_URL);
 

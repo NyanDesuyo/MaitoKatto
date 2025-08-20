@@ -1,4 +1,4 @@
-// commands/expenses.ts
+// commands/cashflow.ts
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
@@ -10,26 +10,26 @@ import {
 } from "discord.js";
 import { eq, and, isNull, gte, lte, desc } from "drizzle-orm";
 
-import { Command } from "../types/Command";
-import { db } from "../config/drizzle";
-import { expenseTable } from "../database/schema";
+import { Command } from "../types/Command.js";
+import { db } from "../config/drizzle.js";
+import { cashflowTable } from "../database/schema.js";
 
-interface Expense {
+interface Cashflow {
   id: number;
   userId: string;
   createdAt: Date;
-  updatedAt?: Date;
-  deletedAt?: Date;
+  updatedAt?: Date | null;
+  deletedAt?: Date | null;
   transactionTimeStamp: Date;
   name: string;
   amount: number;
   account: string;
-  type: number;
+  type: string;
 }
 
-class ExpensePagination {
+class CashflowPagination {
   private interaction: ChatInputCommandInteraction;
-  private expenses: Expense[];
+  private cashflows: Cashflow[];
   private currentPage = 0;
   private itemsPerPage = 5;
   private timeout = 60000; // 1 minute
@@ -37,24 +37,24 @@ class ExpensePagination {
 
   constructor(
     interaction: ChatInputCommandInteraction,
-    expenses: Expense[],
+    cashflows: Cashflow[],
     itemsPerPage = 5,
-    title = "💰 Your Expenses"
+    title = "💰 Your Cashflows"
   ) {
     this.interaction = interaction;
-    this.expenses = expenses;
+    this.cashflows = cashflows;
     this.itemsPerPage = itemsPerPage;
     this.title = title;
   }
 
   get totalPages(): number {
-    return Math.ceil(this.expenses.length / this.itemsPerPage);
+    return Math.ceil(this.cashflows.length / this.itemsPerPage);
   }
 
   private formatAmount(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'IDR',
     }).format(amount);
   }
 
@@ -68,70 +68,66 @@ class ExpensePagination {
     }).format(date);
   }
 
-  private getTypeIcon(type: number): string {
-    // Assuming type 1 = income, type 0 = expense
-    return type === 1 ? "📈" : "📉";
+  private getTypeIcon(type: string): string {
+    return type === "1" ? "📈" : "📉";
   }
 
   private createEmbed(): EmbedBuilder {
     const startIndex = this.currentPage * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
-    const pageExpenses = this.expenses.slice(startIndex, endIndex);
+    const pageCashflows = this.cashflows.slice(startIndex, endIndex);
 
     const embed = new EmbedBuilder()
       .setTitle(this.title)
       .setColor("#0099ff")
       .setFooter({
-        text: `Page ${this.currentPage + 1} of ${this.totalPages} • Total: ${
-          this.expenses.length
-        } expenses`,
+        text: `Page ${this.currentPage + 1} of ${this.totalPages} • Total: ${ 
+          this.cashflows.length
+        } cashflows`,
       });
 
-    if (pageExpenses.length === 0) {
-      embed.setDescription("No expenses found on this page.");
+    if (pageCashflows.length === 0) {
+      embed.setDescription("No cashflows found on this page.");
       return embed;
     }
 
-    const expenseList = pageExpenses
-      .map((expense) => {
-        const typeIcon = this.getTypeIcon(expense.type);
-        const amount = this.formatAmount(expense.amount);
-        const date = this.formatDate(expense.transactionTimeStamp);
-        return `${typeIcon} **#${expense.id}**: ${expense.name}\n` +
-               `💳 ${expense.account} • ${amount}\n` +
+    const cashflowList = pageCashflows
+      .map((cashflow) => {
+        const typeIcon = this.getTypeIcon(cashflow.type);
+        const amount = this.formatAmount(cashflow.amount);
+        const date = this.formatDate(cashflow.transactionTimeStamp);
+        return `${typeIcon} **#${cashflow.id}**: ${cashflow.name}\n` + 
+               `💳 ${cashflow.account} • ${amount}\n` + 
                `🕐 ${date}\n`;
       })
       .join("\n");
 
-    embed.setDescription(expenseList);
+    embed.setDescription(cashflowList);
     return embed;
   }
 
   private createButtons(): ActionRowBuilder<ButtonBuilder> {
     const row = new ActionRowBuilder<ButtonBuilder>();
 
-    // Previous button
     row.addComponents(
       new ButtonBuilder()
-        .setCustomId("expense_prev")
+        .setCustomId("cashflow_prev")
         .setLabel("⬅️ Previous")
         .setStyle(ButtonStyle.Primary)
         .setDisabled(this.currentPage === 0)
     );
 
-    // Page indicator
     row.addComponents(
       new ButtonBuilder()
-        .setCustomId("expense_page_info")
+        .setCustomId("cashflow_page_info")
         .setLabel(`${this.currentPage + 1}/${this.totalPages}`)
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(true)
     );
 
-    // Next button
     row.addComponents(
       new ButtonBuilder()
-        .setCustomId("expense_next")
+        .setCustomId("cashflow_next")
         .setLabel("Next ➡️")
         .setStyle(ButtonStyle.Primary)
         .setDisabled(this.currentPage === this.totalPages - 1)
@@ -145,17 +141,17 @@ class ExpensePagination {
 
     row.addComponents(
       new ButtonBuilder()
-        .setCustomId("expense_prev")
+        .setCustomId("cashflow_prev")
         .setLabel("⬅️ Previous")
         .setStyle(ButtonStyle.Primary)
         .setDisabled(true),
       new ButtonBuilder()
-        .setCustomId("expense_page_info")
+        .setCustomId("cashflow_page_info")
         .setLabel(`${this.currentPage + 1}/${this.totalPages}`)
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(true),
       new ButtonBuilder()
-        .setCustomId("expense_next")
+        .setCustomId("cashflow_next")
         .setLabel("Next ➡️")
         .setStyle(ButtonStyle.Primary)
         .setDisabled(true)
@@ -165,12 +161,11 @@ class ExpensePagination {
   }
 
   async start(): Promise<void> {
-    if (this.expenses.length === 0) {
-      await this.interaction.reply("💰 You have no expenses.");
+    if (this.cashflows.length === 0) {
+      await this.interaction.reply("💰 You have no cashflows.");
       return;
     }
 
-    // If only one page, don't show pagination buttons
     if (this.totalPages === 1) {
       await this.interaction.reply({
         embeds: [this.createEmbed()],
@@ -190,7 +185,6 @@ class ExpensePagination {
     });
 
     collector.on("collect", async (buttonInteraction) => {
-      // Only allow the original user to interact
       if (buttonInteraction.user.id !== this.interaction.user.id) {
         await buttonInteraction.reply({
           content: "❌ These buttons are not for you!",
@@ -200,10 +194,10 @@ class ExpensePagination {
       }
 
       switch (buttonInteraction.customId) {
-        case "expense_prev":
+        case "cashflow_prev":
           this.currentPage = Math.max(0, this.currentPage - 1);
           break;
-        case "expense_next":
+        case "cashflow_next":
           this.currentPage = Math.min(
             this.totalPages - 1,
             this.currentPage + 1
@@ -224,31 +218,30 @@ class ExpensePagination {
           components: [this.createDisabledButtons()],
         });
       } catch (error) {
-        // Message might have been deleted
-        console.log("Could not disable expense pagination buttons:", error);
+        console.log("Could not disable cashflow pagination buttons:", error);
       }
     });
   }
 }
 
-const expenseCommand: Command = {
+const cashflowCommand: Command = {
   data: new SlashCommandBuilder()
-    .setName("expense")
-    .setDescription("Manage your expenses")
+    .setName("cashflow")
+    .setDescription("Manage your cashflows")
     .addSubcommand((sub) =>
       sub
         .setName("add")
-        .setDescription("Add a new expense")
+        .setDescription("Add a new cashflow")
         .addStringOption((opt) =>
           opt
             .setName("name")
-            .setDescription("Expense name/description")
+            .setDescription("Cashflow name/description")
             .setRequired(true)
         )
         .addNumberOption((opt) =>
           opt
             .setName("amount")
-            .setDescription("Expense amount")
+            .setDescription("Cashflow amount")
             .setRequired(true)
         )
         .addStringOption((opt) =>
@@ -260,10 +253,10 @@ const expenseCommand: Command = {
         .addIntegerOption((opt) =>
           opt
             .setName("type")
-            .setDescription("Transaction type (0 = expense, 1 = income)")
+            .setDescription("Transaction type (0 = cashflow, 1 = income)")
             .setRequired(true)
             .addChoices(
-              { name: "Expense", value: 0 },
+              { name: "Cashflow", value: 0 },
               { name: "Income", value: 1 }
             )
         )
@@ -277,11 +270,11 @@ const expenseCommand: Command = {
     .addSubcommand((sub) =>
       sub
         .setName("list")
-        .setDescription("Show your expenses")
+        .setDescription("Show your cashflows")
         .addIntegerOption((opt) =>
           opt
             .setName("per-page")
-            .setDescription("Number of expenses per page (default: 5)")
+            .setDescription("Number of cashflows per page (default: 5)")
             .setMinValue(1)
             .setMaxValue(15)
         )
@@ -289,11 +282,11 @@ const expenseCommand: Command = {
     .addSubcommand((sub) =>
       sub
         .setName("today")
-        .setDescription("Show today's expenses")
+        .setDescription("Show today's cashflows")
         .addIntegerOption((opt) =>
           opt
             .setName("per-page")
-            .setDescription("Number of expenses per page (default: 5)")
+            .setDescription("Number of cashflows per page (default: 5)")
             .setMinValue(1)
             .setMaxValue(15)
         )
@@ -301,20 +294,20 @@ const expenseCommand: Command = {
     .addSubcommand((sub) =>
       sub
         .setName("edit")
-        .setDescription("Edit an expense")
+        .setDescription("Edit a cashflow")
         .addIntegerOption((opt) =>
-          opt.setName("id").setDescription("Expense ID").setRequired(true)
+          opt.setName("id").setDescription("Cashflow ID").setRequired(true)
         )
         .addStringOption((opt) =>
           opt
             .setName("name")
-            .setDescription("New expense name/description")
+            .setDescription("New cashflow name/description")
             .setRequired(false)
         )
         .addNumberOption((opt) =>
           opt
             .setName("amount")
-            .setDescription("New expense amount")
+            .setDescription("New cashflow amount")
             .setRequired(false)
         )
         .addStringOption((opt) =>
@@ -329,7 +322,7 @@ const expenseCommand: Command = {
             .setDescription("New transaction type")
             .setRequired(false)
             .addChoices(
-              { name: "Expense", value: 0 },
+              { name: "Cashflow", value: 0 },
               { name: "Income", value: 1 }
             )
         )
@@ -337,9 +330,9 @@ const expenseCommand: Command = {
     .addSubcommand((sub) =>
       sub
         .setName("delete")
-        .setDescription("Delete an expense (soft delete)")
+        .setDescription("Delete a cashflow (soft delete)")
         .addIntegerOption((opt) =>
-          opt.setName("id").setDescription("Expense ID").setRequired(true)
+          opt.setName("id").setDescription("Cashflow ID").setRequired(true)
         )
     ),
 
@@ -356,7 +349,6 @@ const expenseCommand: Command = {
       
       let transactionTimeStamp = new Date();
       
-      // Parse custom date if provided
       if (dateStr) {
         const parsedDate = new Date(dateStr);
         if (isNaN(parsedDate.getTime())) {
@@ -367,57 +359,57 @@ const expenseCommand: Command = {
 
       try {
         const [inserted] = await db
-          .insert(expenseTable)
-          .values({ 
+          .insert(cashflowTable)
+          .values({
             userId, 
             name, 
             amount, 
             account, 
-            type, 
+            type: type.toString(), 
             transactionTimeStamp 
           })
           .returning();
         
-        const typeIcon = type === 1 ? "📈" : "📉";
-        const formattedAmount = new Intl.NumberFormat('en-US', {
+        const typeIcon = type.toString() === "1" ? "📈" : "📉";
+        const formattedAmount = new Intl.NumberFormat('id-ID', {
           style: 'currency',
-          currency: 'USD',
+          currency: 'IDR',
         }).format(amount);
         
         return interaction.reply(
-          `✅ Added ${type === 1 ? 'income' : 'expense'} **#${inserted.id}**: ${name}\n` +
+          `✅ Added ${type.toString() === "1" ? 'income' : 'cashflow'} **#${inserted.id}**: ${name}\n` + 
           `${typeIcon} ${formattedAmount} from ${account}`
         );
       } catch (error) {
-        console.error("Error adding expense:", error);
-        return interaction.reply("❌ Failed to add expense. Please try again.");
+        console.error("Error adding cashflow:", error);
+        return interaction.reply("❌ Failed to add cashflow. Please try again.");
       }
     }
 
     if (sub === "list") {
       try {
-        const userExpenses = await db
+        const userCashflows: Cashflow[] = await db
           .select()
-          .from(expenseTable)
+          .from(cashflowTable)
           .where(
             and(
-              eq(expenseTable.userId, userId),
-              isNull(expenseTable.deletedAt)
+              eq(cashflowTable.userId, userId),
+              isNull(cashflowTable.deletedAt)
             )
           )
-          .orderBy(desc(expenseTable.transactionTimeStamp));
+          .orderBy(desc(cashflowTable.transactionTimeStamp));
 
         const itemsPerPage = interaction.options.getInteger("per-page") || 5;
-        const pagination = new ExpensePagination(
+        const pagination = new CashflowPagination(
           interaction,
-          userExpenses,
+          userCashflows,
           itemsPerPage
         );
         await pagination.start();
         return;
       } catch (error) {
-        console.error("Error fetching expenses:", error);
-        return interaction.reply("❌ Failed to fetch expenses. Please try again.");
+        console.error("Error fetching cashflows:", error);
+        return interaction.reply("❌ Failed to fetch cashflows. Please try again.");
       }
     }
 
@@ -427,31 +419,31 @@ const expenseCommand: Command = {
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
-        const todayExpenses = await db
+        const todayCashflows: Cashflow[] = await db
           .select()
-          .from(expenseTable)
+          .from(cashflowTable)
           .where(
             and(
-              eq(expenseTable.userId, userId),
-              isNull(expenseTable.deletedAt),
-              gte(expenseTable.transactionTimeStamp, startOfDay),
-              lte(expenseTable.transactionTimeStamp, endOfDay)
+              eq(cashflowTable.userId, userId),
+              isNull(cashflowTable.deletedAt),
+              gte(cashflowTable.transactionTimeStamp, startOfDay),
+              lte(cashflowTable.transactionTimeStamp, endOfDay)
             )
           )
-          .orderBy(desc(expenseTable.transactionTimeStamp));
+          .orderBy(desc(cashflowTable.transactionTimeStamp));
 
         const itemsPerPage = interaction.options.getInteger("per-page") || 5;
-        const pagination = new ExpensePagination(
+        const pagination = new CashflowPagination(
           interaction,
-          todayExpenses,
+          todayCashflows,
           itemsPerPage,
-          "📅 Today's Expenses"
+          "📅 Today's Cashflows"
         );
         await pagination.start();
         return;
       } catch (error) {
-        console.error("Error fetching today's expenses:", error);
-        return interaction.reply("❌ Failed to fetch today's expenses. Please try again.");
+        console.error("Error fetching today's cashflows:", error);
+        return interaction.reply("❌ Failed to fetch today's cashflows. Please try again.");
       }
     }
 
@@ -462,39 +454,37 @@ const expenseCommand: Command = {
       const account = interaction.options.getString("account");
       const type = interaction.options.getInteger("type");
 
-      // Check if at least one field is provided
       if (!name && amount === null && !account && type === null) {
         return interaction.reply("❌ Please provide at least one field to update.");
       }
 
       try {
-        // Build the update object dynamically
         const updateData: any = { updatedAt: new Date() };
         if (name) updateData.name = name;
         if (amount !== null) updateData.amount = amount;
         if (account) updateData.account = account;
-        if (type !== null) updateData.type = type;
+        if (type !== null) updateData.type = type.toString();
 
         const updated = await db
-          .update(expenseTable)
+          .update(cashflowTable)
           .set(updateData)
           .where(
             and(
-              eq(expenseTable.id, id),
-              eq(expenseTable.userId, userId),
-              isNull(expenseTable.deletedAt)
+              eq(cashflowTable.id, id),
+              eq(cashflowTable.userId, userId),
+              isNull(cashflowTable.deletedAt)
             )
           )
           .returning();
 
         if (!updated.length) {
-          return interaction.reply("❌ Expense not found or already deleted.");
+          return interaction.reply("❌ Cashflow not found or already deleted.");
         }
         
-        return interaction.reply(`✏️ Updated expense **#${id}**.`);
+        return interaction.reply(`✏️ Updated cashflow **#${id}**.`);
       } catch (error) {
-        console.error("Error updating expense:", error);
-        return interaction.reply("❌ Failed to update expense. Please try again.");
+        console.error("Error updating cashflow:", error);
+        return interaction.reply("❌ Failed to update cashflow. Please try again.");
       }
     }
 
@@ -503,31 +493,31 @@ const expenseCommand: Command = {
       
       try {
         const updated = await db
-          .update(expenseTable)
-          .set({ 
+          .update(cashflowTable)
+          .set({
             deletedAt: new Date(),
             updatedAt: new Date()
           })
           .where(
             and(
-              eq(expenseTable.id, id),
-              eq(expenseTable.userId, userId),
-              isNull(expenseTable.deletedAt)
+              eq(cashflowTable.id, id),
+              eq(cashflowTable.userId, userId),
+              isNull(cashflowTable.deletedAt)
             )
           )
           .returning();
 
         if (!updated.length) {
-          return interaction.reply("❌ Expense not found or already deleted.");
+          return interaction.reply("❌ Cashflow not found or already deleted.");
         }
         
-        return interaction.reply(`🗑️ Deleted expense **#${id}**.`);
+        return interaction.reply(`🗑️ Deleted cashflow **#${id}**.`);
       } catch (error) {
-        console.error("Error deleting expense:", error);
-        return interaction.reply("❌ Failed to delete expense. Please try again.");
+        console.error("Error deleting cashflow:", error);
+        return interaction.reply("❌ Failed to delete cashflow. Please try again.");
       }
     }
   },
 };
 
-export default expenseCommand;
+export default cashflowCommand;

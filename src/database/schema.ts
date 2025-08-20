@@ -6,7 +6,7 @@ export const todoTable = pgTable("todos", {
   text: text("text").notNull(),
 });
 
-export const expenseTable = pgTable("expenses", {
+export const cashflowTable = pgTable("cashflows", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     userId: text("user_id").notNull(),
     createdAt: timestamp("createdAt").notNull().defaultNow(),
